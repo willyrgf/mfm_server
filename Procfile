@@ -1,0 +1,1 @@
+app: cargo run

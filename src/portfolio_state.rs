@@ -1,8 +1,14 @@
+use diesel::prelude::*;
+use diesel_citext::types::CiString;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use warp::{self, Filter};
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+use super::schema::portfolio_states;
+use crate::establish_connection;
+
+#[derive(Deserialize, Serialize, Clone, Debug, Insertable)]
+#[table_name = "portfolio_states"]
 pub struct PortfolioState {
     token_id: uuid::Uuid,
     rebalancer_label: String,
@@ -18,8 +24,14 @@ fn portfolio_state_json_body(
 pub async fn add_portfolio_state(
     portfolio_state: PortfolioState,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    //TODO: continue here
     let s = format!("{:?}", portfolio_state);
+
+    let conn = establish_connection();
+    let r = diesel::insert_into(crate::schema::portfolio_states::table)
+        .values(portfolio_state)
+        .get_result(conn)
+        .unwrap();
+
     Ok(warp::reply::with_status(s, warp::http::StatusCode::CREATED))
 }
 

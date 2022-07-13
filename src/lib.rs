@@ -1,14 +1,21 @@
 #[macro_use]
 extern crate diesel;
 
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use diesel::{Connection, PgConnection};
 
 pub mod portfolio_state;
 pub mod schema;
 
-pub async fn start_http_server() {
-    let routes = portfolio_state::get_route().await;
-    warp::serve(routes).run(([0, 0, 0, 0], 3000)).await;
+async fn health_check() -> impl Responder {
+    HttpResponse::Ok()
+}
+
+pub async fn start_http_server() -> std::io::Result<()> {
+    HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
+        .bind("127.0.0.1:8000")?
+        .run()
+        .await
 }
 
 pub fn establish_connection() -> PgConnection {

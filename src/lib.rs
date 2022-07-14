@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate diesel;
 
+use std::net::TcpListener;
+
 use actix_web::{dev::Server, web, App, HttpResponse, HttpServer, Responder};
 use diesel::{Connection, PgConnection};
 use env_logger::Env;
@@ -12,9 +14,9 @@ async fn health_check() -> impl Responder {
     HttpResponse::Ok()
 }
 
-pub fn start_http_server() -> Result<Server, std::io::Error> {
+pub fn start_http_server(listener: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
-        .bind("127.0.0.1:8000")?
+        .listen(listener)?
         .run();
 
     Ok(server)
@@ -40,5 +42,9 @@ pub fn establish_connection() -> PgConnection {
 
 pub fn run() -> Result<Server, std::io::Error> {
     env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
-    start_http_server()
+
+    let addr = "127.0.0.1:8000";
+    let listener = TcpListener::bind(addr).expect("failed to bind the addr:port");
+
+    start_http_server(listener)
 }

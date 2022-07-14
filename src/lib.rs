@@ -1,8 +1,9 @@
 #[macro_use]
 extern crate diesel;
 
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{dev::Server, web, App, HttpResponse, HttpServer, Responder};
 use diesel::{Connection, PgConnection};
+use env_logger::Env;
 
 pub mod portfolio_state;
 pub mod schema;
@@ -11,11 +12,12 @@ async fn health_check() -> impl Responder {
     HttpResponse::Ok()
 }
 
-pub async fn start_http_server() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
+pub fn start_http_server() -> Result<Server, std::io::Error> {
+    let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
         .bind("127.0.0.1:8000")?
-        .run()
-        .await
+        .run();
+
+    Ok(server)
 }
 
 pub fn establish_connection() -> PgConnection {
@@ -34,4 +36,9 @@ pub fn establish_connection() -> PgConnection {
         );
         panic!()
     })
+}
+
+pub fn run() -> Result<Server, std::io::Error> {
+    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    start_http_server()
 }

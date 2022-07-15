@@ -15,9 +15,13 @@ async fn health_check() -> impl Responder {
 }
 
 pub fn start_http_server(listener: TcpListener) -> Result<Server, std::io::Error> {
-    let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
-        .listen(listener)?
-        .run();
+    let server = HttpServer::new(|| {
+        App::new()
+            .route("/health_check", web::get().to(health_check))
+            .route("/portfolio_state", web::post().to(portfolio_state::handler))
+    })
+    .listen(listener)?
+    .run();
 
     Ok(server)
 }

@@ -44,3 +44,18 @@
 //         .and(portfolio_state_json_body())
 //         .and_then(add_portfolio_state)
 // }
+
+use actix_web::{web, HttpResponse};
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct PortfolioState {
+    token_id: uuid::Uuid,
+    rebalancer_label: String,
+    data: serde_json::Value,
+}
+
+pub async fn handler(body: web::Json<PortfolioState>) -> HttpResponse {
+    log::debug!("portofolio_state(): body: {:?}", body);
+    HttpResponse::Ok().finish()
+}

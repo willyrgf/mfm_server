@@ -4,6 +4,8 @@ mod common;
 async fn portfolio_state_a_200_for_valid_json_body() {
     let addr = common::spawn_app();
 
+    let mut conn = mfm_server::establish_connection().await;
+
     let response = {
         let client = reqwest::Client::new();
         let body = r#"
@@ -24,6 +26,24 @@ async fn portfolio_state_a_200_for_valid_json_body() {
     };
 
     assert_eq!(response.status().as_u16(), 200);
+    let saved = sqlx::query!(
+        r#"
+            select
+                id, token_id, rebalancer_label::text 
+            from portfolio_states
+            where true
+            order by created_at desc
+            limit 1
+        "#,
+    )
+    .fetch_one(&mut conn)
+    .await
+    .expect("failed on fetch saved portfolio_state");
+
+    assert_eq!(
+        saved.token_id,
+        uuid::Uuid::parse_str("04a370dc-c864-453c-875a-bf00ee839ae7").unwrap()
+    );
 }
 
 #[actix_web::test]

@@ -11,3 +11,6 @@ Cargo.lock
 
 # Remove local docker-compose.yml
 docker-compose.yml
+
+# env local file
+.env

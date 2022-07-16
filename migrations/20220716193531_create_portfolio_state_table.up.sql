@@ -1,4 +1,4 @@
--- Your SQL goes here
+-- Add up migration script here
 create extension if not exists "uuid-ossp";
 create extension if not exists "citext";
 

@@ -2,13 +2,13 @@ mod common;
 
 #[actix_web::test]
 async fn health_check_works() {
-    let addr = common::spawn_app();
+    let app = common::spawn_app().await;
 
     let response = {
         let client = reqwest::Client::new();
 
         client
-            .get(&format!("{}/health_check", addr))
+            .get(&format!("{}/health_check", app.address))
             .send()
             .await
             .expect("failed to execute the request")

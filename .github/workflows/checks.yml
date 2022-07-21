@@ -8,7 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DATABASE_URL: "postgres://postgres:example@127.0.0.1:5432/mfmserver_development"
+  SQLX_OFFLINE: true
 
 jobs:
   build:

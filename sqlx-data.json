@@ -1,0 +1,17 @@
+{
+  "db": "PostgreSQL",
+  "a2353db19482f2392279ae723bf0f7de3ebcd72957c909e9a7c534a3be02ea64": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n        insert into portfolio_states (token_id, rebalancer_label, data)\n        values ($1, $2, $3)\n        "
+  }
+}

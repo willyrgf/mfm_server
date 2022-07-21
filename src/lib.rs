@@ -66,3 +66,19 @@ pub async fn run() -> Result<Server, std::io::Error> {
 
     start_http_server(listener, db_pool)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::env;
+
+    use super::*;
+
+    #[test]
+    fn check_database_url_from_env() {
+        let expected =
+            "postgres://postgres:example@127.0.0.1:5445/mfmserver_development".to_string();
+        env::set_var("DATABASE_URL", expected.clone());
+
+        assert_eq!(expected, database_url());
+    }
+}

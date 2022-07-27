@@ -3,6 +3,7 @@ use std::net::TcpListener;
 use actix_web::{dev::Server, web, App, HttpResponse, HttpServer, Responder};
 use env_logger::Env;
 use sqlx::{postgres::PgConnectOptions, PgPool};
+use tracing_actix_web::TracingLogger;
 
 pub mod portfolio_state;
 
@@ -15,6 +16,7 @@ pub fn start_http_server(listener: TcpListener, db_pool: PgPool) -> Result<Serve
 
     let server = HttpServer::new(move || {
         App::new()
+            .wrap(TracingLogger::default())
             .route("/health_check", web::get().to(health_check))
             .route("/portfolio_state", web::post().to(portfolio_state::handler))
             .app_data(db_pool.clone())
@@ -27,7 +29,7 @@ pub fn start_http_server(listener: TcpListener, db_pool: PgPool) -> Result<Serve
 
 pub async fn connect_pg_pool(options: PgConnectOptions) -> PgPool {
     PgPool::connect_with(options).await.unwrap_or_else(|e| {
-        log::error!(
+        tracing::error!(
             "connect_pg_pool(): PgPool::connect() ConnectionError: {}",
             e
         );
@@ -37,7 +39,7 @@ pub async fn connect_pg_pool(options: PgConnectOptions) -> PgPool {
 
 pub async fn connect_db_pool(database_url: String) -> PgPool {
     let options: PgConnectOptions = database_url.parse().unwrap_or_else(|e| {
-        log::error!(
+        tracing::error!(
             "connect_db_pool(): database_url cannot be parsed to PgConnectOptions, error: {}",
             e
         );
@@ -48,7 +50,7 @@ pub async fn connect_db_pool(database_url: String) -> PgPool {
 
 pub fn database_url() -> String {
     std::env::var("DATABASE_URL").unwrap_or_else(|e| {
-        log::error!("database_url(): DATABASE_URL must be set, error: {}", e);
+        tracing::error!("database_url(): DATABASE_URL must be set, error: {}", e);
         panic!()
     })
 }

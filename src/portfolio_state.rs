@@ -10,7 +10,12 @@ pub struct PortfolioState {
 }
 
 pub async fn handler(body: web::Json<PortfolioState>, db_pool: web::Data<PgPool>) -> HttpResponse {
-    log::debug!("portofolio_state(): body: {:?}", body);
+    let request_id = uuid::Uuid::new_v4();
+    tracing::info!(
+        "portofolio_state::handler(): request_id: {}, body: {:?}",
+        request_id,
+        body
+    );
 
     match sqlx::query!(
         r#"
@@ -24,9 +29,20 @@ pub async fn handler(body: web::Json<PortfolioState>, db_pool: web::Data<PgPool>
     .execute(db_pool.get_ref())
     .await
     {
-        Ok(_) => HttpResponse::Ok().finish(),
+        Ok(v) => {
+            tracing::info!(
+                "portofolio_state::handler(): request_id: {}, portfolio_state saved, result: {:?}",
+                request_id,
+                v
+            );
+            HttpResponse::Ok().finish()
+        }
         Err(e) => {
-            log::error!("failed to execute query: {}", e);
+            tracing::error!(
+                "portofolio_state::handler(): request_id: {}, failed to execute query: {}",
+                request_id,
+                e
+            );
             HttpResponse::InternalServerError().finish()
         }
     }

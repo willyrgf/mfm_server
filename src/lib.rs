@@ -1,11 +1,15 @@
 use std::net::TcpListener;
 
 use actix_web::{dev::Server, web, App, HttpResponse, HttpServer, Responder};
-use env_logger::Env;
 use sqlx::{postgres::PgConnectOptions, PgPool};
+use telemetry::{get_subscriber, init_subscriber};
 use tracing_actix_web::TracingLogger;
 
 pub mod portfolio_state;
+pub mod telemetry;
+
+const APP_NAME: &str = "mfm_server";
+const DEFAULT_LOG_LEVEL: &str = "info";
 
 async fn health_check() -> impl Responder {
     HttpResponse::Ok()
@@ -60,7 +64,9 @@ pub async fn establish_db_pool() -> PgPool {
 }
 
 pub async fn run() -> Result<Server, std::io::Error> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    let subscriber = get_subscriber(APP_NAME.into(), DEFAULT_LOG_LEVEL.into(), std::io::stdout);
+    init_subscriber(subscriber);
+
     let addr = std::env::var("BIND_ADDRESS").unwrap_or_else(|_| "127.0.0.1:8000".to_string());
 
     let listener = TcpListener::bind(addr).expect("failed to bind the addr:port");

@@ -1,11 +1,11 @@
-use std::net::TcpListener;
-
 use actix_web::{dev::Server, web, App, HttpResponse, HttpServer, Responder};
+use routes::portfolio_state;
 use sqlx::{postgres::PgConnectOptions, PgPool};
+use std::net::TcpListener;
 use telemetry::{get_subscriber, init_subscriber};
 use tracing_actix_web::TracingLogger;
 
-pub mod portfolio_state;
+pub mod routes;
 pub mod telemetry;
 
 const APP_NAME: &str = "mfm_server";

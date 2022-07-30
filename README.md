@@ -14,6 +14,17 @@ bunyan cli used to filter and pretty-print Bunyan log file content_
 cargo install bunyan
 ```
 
+## Prerequirement
+### Install sqlx-cli
+```sh
+cargo install --version=0.6.0 sqlx-cli --no-default-features --features postgres,rustls
+```
+
+## Run migration
+```sh
+DATABASE_URL="postgres://postgres:example@127.0.0.1:5445/mfmserver_development" sqlx migrate run
+```
+
 ## To run
 ```sh
 DATABASE_URL="postgres://postgres:example@127.0.0.1:5445/mfmserver_development" RUST_LOG=debug cargo watch -x 'run' | bunyan

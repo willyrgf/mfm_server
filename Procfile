@@ -1,1 +1,1 @@
-app: cargo run
+web: ./target/release/mfm_server

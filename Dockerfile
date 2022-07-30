@@ -12,4 +12,4 @@ WORKDIR /app
 COPY . /app
 
 RUN cargo install diesel_cli --no-default-features --features postgres --verbose
-RUN cargo build
+RUN cargo build --release

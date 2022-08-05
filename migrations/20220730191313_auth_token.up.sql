@@ -8,3 +8,8 @@ create table auth_tokens (
 );
 
 -- insert into auth_tokens (token_label) values ("my_token");
+
+alter table portfolio_states 
+	add constraint fk_auth_token 
+	foreign key (auth_token_id) 
+	references auth_tokens(id);

@@ -33,5 +33,6 @@ pub async fn spawn_app() -> TestApp {
 
     actix_web::rt::spawn(server);
 
+    //TODO: add a cleanup in the db server
     TestApp { address, db_pool }
 }

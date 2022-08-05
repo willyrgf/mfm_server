@@ -1,10 +1,11 @@
+use mfm_server::routes::API_TOKEN_HEADER;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 mod common;
 
 #[derive(Deserialize, Serialize, Debug)]
 struct Body {
-    token_id: uuid::Uuid,
     rebalancer_label: String,
     data: String,
 }
@@ -13,8 +14,24 @@ struct Body {
 async fn portfolio_state_a_200_for_valid_json_body() {
     let app = common::spawn_app().await;
 
+    let token_label = format!("{}_test", Uuid::new_v4());
+    let auth_token = sqlx::query!(
+        r#"
+        insert into auth_tokens (token_label)
+        values ($1)
+        returning token
+        "#,
+        token_label
+    )
+    .fetch_one(&app.db_pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("failed to execute query: {:?}", e);
+        e
+    })
+    .unwrap();
+
     let body = Body {
-        token_id: uuid::Uuid::new_v4(),
         rebalancer_label: "label1".to_string(),
         data: r#"
             {"test": "{"inner": "aaaa"}""}
@@ -30,6 +47,7 @@ async fn portfolio_state_a_200_for_valid_json_body() {
         client
             .post(&format!("{}/portfolio_state", app.address))
             .header("Content-Type", "application/json")
+            .header(API_TOKEN_HEADER, auth_token.token.unwrap().to_string())
             .body(string_body)
             .send()
             .await
@@ -40,22 +58,20 @@ async fn portfolio_state_a_200_for_valid_json_body() {
     let saved = sqlx::query!(
         r#"
             select
-                id, token_id, rebalancer_label
+                id, rebalancer_label
             from portfolio_states
             where true
-            and token_id = $1
-            and rebalancer_label = $2
+            and rebalancer_label = $1
             order by created_at desc
             limit 1
         "#,
-        body.token_id,
         body.rebalancer_label
     )
     .fetch_one(&app.db_pool)
     .await
     .expect("failed on fetch saved portfolio_state");
 
-    assert_eq!(saved.token_id, body.token_id);
+    assert_eq!(saved.rebalancer_label, body.rebalancer_label);
 }
 
 #[actix_web::test]
@@ -72,18 +88,6 @@ async fn portfolio_state_a_400_for_invalid_json_body() {
         BodyAndMessage {
             body: r#"
                 {
-                    "token_id": "wrong-uuid-format-here",
-                    "rebalancer_label": "label1",
-                    "data": {"test": "aaa"}
-                }
-            "#
-            .to_string(),
-            message: "wrong uuid format in token_id".to_string(),
-        },
-        BodyAndMessage {
-            body: r#"
-                {
-                    "token_id": "04a370dc-c864-453c-875a-bf00ee839ae7",
                     "data": {"test": "aaa"}
                 }
             "#
@@ -93,8 +97,7 @@ async fn portfolio_state_a_400_for_invalid_json_body() {
         BodyAndMessage {
             body: r#"
                 {
-                    "token_id": "04a370dc-c864-453c-875a-bf00ee839ae7",
-                    "rebalancer_label": "label1",
+                    "rebalancer_label": "label1"
                 }
             "#
             .to_string(),
@@ -118,4 +121,34 @@ async fn portfolio_state_a_400_for_invalid_json_body() {
             body_and_message.message
         );
     }
+}
+
+#[actix_web::test]
+async fn portfolio_state_a_401_for_unathorized_access() {
+    let app = common::spawn_app().await;
+
+    let client = reqwest::Client::new();
+    let body = Body {
+        rebalancer_label: "label1".to_string(),
+        data: r#"
+            {"test": "{"inner": "aaaa"}""}
+            "#
+        .to_string(),
+    };
+
+    let string_body = serde_json::to_string(&body).unwrap();
+
+    let response = client
+        .post(&format!("{}/portfolio_state", app.address))
+        .header("Content-Type", "application/json")
+        .body(string_body)
+        .send()
+        .await
+        .expect("failed to execute the request");
+
+    assert_eq!(
+        response.status().as_u16(),
+        401,
+        "the API did not fail with 401"
+    );
 }

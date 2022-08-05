@@ -1,6 +1,6 @@
 {
   "db": "PostgreSQL",
-  "a2353db19482f2392279ae723bf0f7de3ebcd72957c909e9a7c534a3be02ea64": {
+  "5b71e0cf083e8232a08701bc68588c7d3f8d6333a5d4ab89611f8d8e098d89a0": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -12,6 +12,26 @@
         ]
       }
     },
-    "query": "\n        insert into portfolio_states (token_id, rebalancer_label, data)\n        values ($1, $2, $3)\n        "
+    "query": "\n        insert into portfolio_states (auth_token_id, rebalancer_label, data)\n        values ($1, $2, $3)\n        "
+  },
+  "e4f75e45a9be11fbc838d15fe927d4fb9f5ce1006b14cfb133e9316aae587f7b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            select\n                id\n            from auth_tokens\n            where token = $1\n            "
   }
 }

@@ -1,4 +1,4 @@
-use mfm_server::routes::API_TOKEN_HEADER;
+use mfm_server::authentication::API_TOKEN_HEADER;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -126,29 +126,48 @@ async fn portfolio_state_a_400_for_invalid_json_body() {
 #[actix_web::test]
 async fn portfolio_state_a_401_for_unathorized_access() {
     let app = common::spawn_app().await;
+    let test_cases = vec![
+        (
+            Body {
+                rebalancer_label: "label1".to_string(),
+                data: r#"{"test": {"inner": "aaaa"}}"#.to_string(),
+            },
+            Uuid::new_v4().to_string(),
+        ),
+        (
+            Body {
+                rebalancer_label: "label1".to_string(),
+                data: r#"{"test": {"inner": "aaaa"}}"#.to_string(),
+            },
+            "non_uuid_format".to_string(),
+        ),
+        (
+            Body {
+                rebalancer_label: "label1".to_string(),
+                data: r#"{"test": {"inner": "aaaa"}}"#.to_string(),
+            },
+            "".to_string(),
+        ),
+    ];
 
     let client = reqwest::Client::new();
-    let body = Body {
-        rebalancer_label: "label1".to_string(),
-        data: r#"
-            {"test": "{"inner": "aaaa"}""}
-            "#
-        .to_string(),
-    };
 
-    let string_body = serde_json::to_string(&body).unwrap();
+    for (body, api_token) in test_cases {
+        let string_body = serde_json::to_string(&body).unwrap();
 
-    let response = client
-        .post(&format!("{}/portfolio_state", app.address))
-        .header("Content-Type", "application/json")
-        .body(string_body)
-        .send()
-        .await
-        .expect("failed to execute the request");
+        let response = client
+            .post(&format!("{}/portfolio_state", app.address))
+            .header("Content-Type", "application/json")
+            .header(API_TOKEN_HEADER, api_token)
+            .body(string_body)
+            .send()
+            .await
+            .expect("failed to execute the request");
 
-    assert_eq!(
-        response.status().as_u16(),
-        401,
-        "the API did not fail with 401"
-    );
+        assert_eq!(
+            response.status().as_u16(),
+            401,
+            "the API did not fail with 401"
+        );
+    }
 }

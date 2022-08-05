@@ -5,6 +5,7 @@ use std::net::TcpListener;
 use telemetry::{get_subscriber, init_subscriber};
 use tracing_actix_web::TracingLogger;
 
+pub mod authentication;
 pub mod routes;
 pub mod telemetry;
 

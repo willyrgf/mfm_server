@@ -1,30 +1,10 @@
-use actix_web::http::header::HeaderMap;
+use actix_web::{http::header::HeaderMap, Result};
 use anyhow::{Context, Ok};
 use uuid::Uuid;
 
+use crate::authentication::API_TOKEN_HEADER;
+
 pub mod portfolio_state;
-
-pub const API_TOKEN_HEADER: &str = "X-Api-Token";
-#[derive(Debug)]
-pub struct ApiToken {
-    auth_token_id: Uuid,
-    auth_token: Uuid,
-}
-
-impl ApiToken {
-    pub fn new(auth_token_id: Uuid, auth_token: Uuid) -> ApiToken {
-        ApiToken {
-            auth_token_id,
-            auth_token,
-        }
-    }
-    pub fn auth_token(&self) -> Uuid {
-        self.auth_token
-    }
-    pub fn auth_token_id(&self) -> Uuid {
-        self.auth_token_id
-    }
-}
 
 pub fn get_api_token_header(headers: &HeaderMap) -> Result<Uuid, anyhow::Error> {
     let header_value = headers

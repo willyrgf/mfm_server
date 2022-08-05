@@ -1,8 +1,12 @@
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse, ResponseError, Result};
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+use uuid::Uuid;
 
-use super::{get_api_token_header, ApiToken};
+use crate::authentication::{ApiToken, AuthError};
+
+use super::get_api_token_header;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PortfolioStateError {
@@ -15,7 +19,7 @@ pub enum PortfolioStateError {
 impl ResponseError for PortfolioStateError {
     fn status_code(&self) -> StatusCode {
         match &self {
-            &PortfolioStateError::AuthError(_) => StatusCode::UNAUTHORIZED,
+            PortfolioStateError::AuthError(_) => StatusCode::UNAUTHORIZED,
             PortfolioStateError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -40,30 +44,20 @@ pub async fn handler(
     body: web::Json<PortfolioStateBody>,
     db_pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, PortfolioStateError> {
-    let api_token = {
-        let auth_token =
-            get_api_token_header(request.headers()).map_err(PortfolioStateError::AuthError)?;
+    let api_token = ApiToken::new(
+        get_api_token_header(request.headers()).map_err(PortfolioStateError::AuthError)?,
+    );
 
-        let record = sqlx::query!(
-            r#"
-            select
-                id
-            from auth_tokens
-            where token = $1
-            "#,
-            auth_token
-        )
-        .fetch_one(db_pool.as_ref())
+    let auth_token_id = api_token.validate(&db_pool).await.map_err(|e| match e {
+        AuthError::InvalidAuthToken(_) => PortfolioStateError::AuthError(e.into()),
+        AuthError::UnexpectedError(_) => PortfolioStateError::UnexpectedError(e.into()),
+    })?;
+
+    insert_portfolio_state(&db_pool, &body, auth_token_id)
         .await
-        .expect("failed on fetch saved portfolio_state");
+        .context("failed to insert portfolio_state")?;
 
-        ApiToken::new(record.id, auth_token)
-    };
-
-    match insert_portfolio_state(&db_pool, &body, &api_token).await {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
-    }
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[tracing::instrument(
@@ -73,14 +67,14 @@ pub async fn handler(
 pub async fn insert_portfolio_state(
     db_pool: &PgPool,
     body: &PortfolioStateBody,
-    api_token: &ApiToken,
+    auth_token_id: Uuid,
 ) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         insert into portfolio_states (auth_token_id, rebalancer_label, data)
         values ($1, $2, $3)
         "#,
-        api_token.auth_token_id(),
+        auth_token_id,
         body.rebalancer_label,
         body.data
     )

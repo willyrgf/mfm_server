@@ -29,3 +29,10 @@ DATABASE_URL="postgres://postgres:example@127.0.0.1:5445/mfmserver_development" 
 ```sh
 DATABASE_URL="postgres://postgres:example@127.0.0.1:5445/mfmserver_development" RUST_LOG=debug cargo watch -x 'run' | bunyan
 ```
+
+## To create a auth_token
+```sql
+insert into auth_tokens (token_label)
+			values ("my_toekn")
+			returning token;
+```

@@ -72,6 +72,7 @@ async fn portfolio_state_a_200_for_valid_json_body() {
     .expect("failed on fetch saved portfolio_state");
 
     assert_eq!(saved.rebalancer_label, body.rebalancer_label);
+    app.cleanup().await.unwrap();
 }
 
 #[actix_web::test]
@@ -121,11 +122,14 @@ async fn portfolio_state_a_400_for_invalid_json_body() {
             body_and_message.message
         );
     }
+
+    app.cleanup().await.unwrap();
 }
 
 #[actix_web::test]
 async fn portfolio_state_a_401_for_unathorized_access() {
     let app = common::spawn_app().await;
+
     let test_cases = vec![
         (
             Body {
@@ -170,4 +174,6 @@ async fn portfolio_state_a_401_for_unathorized_access() {
             "the API did not fail with 401"
         );
     }
+
+    app.cleanup().await.unwrap();
 }

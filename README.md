@@ -1,8 +1,9 @@
 # mfm_server
+A server to enhance [MFM features](https://github.com/willyrgf/mfm).
 
 ## ENVs
-- BIND_ADDRESS: the host address to bind default is `127.0.0.1:8000`
-- DATABASE_URL: the database url of the server with the format `postgres://postgres:example@database:5432/mfmserver_development`
+- `BIND_ADDRESS`: the host address to bind default is `127.0.0.1:8000`
+- `DATABASE_URL`: the database url of the server with the format `postgres://postgres:example@database:5432/mfmserver_development`
 
 ## Optional
 ### Install bunyan
@@ -32,6 +33,7 @@ DATABASE_URL="postgres://postgres:example@127.0.0.1:5445/mfmserver_development" 
 
 ## To create a auth_token
 ```sql
+-- connected in your `mfmserver_development` database
 insert into auth_tokens (token_label)
 			values ("my_toekn")
 			returning token;

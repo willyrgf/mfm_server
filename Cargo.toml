@@ -1,5 +1,6 @@
 [package]
 name = "mfm_server"
+description = "A server to enhance MFM features"
 version = "0.1.1"
 edition = "2021"
 

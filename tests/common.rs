@@ -35,7 +35,10 @@ async fn cleaning_db_with_isolation(db_pool: &PgPool) -> Result<(), anyhow::Erro
 
     db_pool.close().await;
 
-    let setup_db_pool = mfm_server::establish_db_pool().await;
+    let setup_db_pool = mfm_server::establish_db_pool().await.unwrap_or_else(|e| {
+        tracing::error!(error = %e);
+        panic!()
+    });
 
     setup_db_pool
         .execute(format!(r#"drop database "{}";"#, database_name).as_str())
@@ -47,10 +50,13 @@ async fn cleaning_db_with_isolation(db_pool: &PgPool) -> Result<(), anyhow::Erro
 
 #[tracing::instrument(name = "setup a new db connection with isolation")]
 async fn new_db_with_isolation() -> Result<PgPool, anyhow::Error> {
-    let setup_db_pool = mfm_server::establish_db_pool().await;
     let database_name = Uuid::new_v4().to_string();
+    let setup_db_pool = mfm_server::establish_db_pool().await.unwrap_or_else(|e| {
+        tracing::error!(error = %e);
+        panic!()
+    });
 
-    let mut options: PgConnectOptions = mfm_server::database_url().parse().unwrap();
+    let mut options: PgConnectOptions = mfm_server::database_url().unwrap().parse().unwrap();
     options = options.database(&database_name);
 
     setup_db_pool
@@ -58,7 +64,12 @@ async fn new_db_with_isolation() -> Result<PgPool, anyhow::Error> {
         .await
         .context("failed on create new database")?;
 
-    let db_pool = mfm_server::connect_pg_pool(options).await;
+    let db_pool = mfm_server::connect_pg_pool(options)
+        .await
+        .unwrap_or_else(|e| {
+            tracing::error!(error = %e);
+            panic!()
+        });
 
     sqlx::migrate!("./migrations")
         .run(&db_pool)

@@ -1,11 +1,14 @@
-use actix_web::{http::header::HeaderMap, Result};
-use anyhow::{Context, Ok};
+use actix_web::{http::header::HeaderMap, HttpResponse};
+use anyhow::{Context, Ok, Result};
 use uuid::Uuid;
 
 use crate::authentication::API_TOKEN_HEADER;
 
 pub mod portfolio_state;
 
+//TODO: add unit tests here
+
+#[tracing::instrument(name = "get api token from header")]
 pub fn get_api_token_header(headers: &HeaderMap) -> Result<Uuid, anyhow::Error> {
     let header_value = headers
         .get(API_TOKEN_HEADER)
@@ -22,4 +25,9 @@ pub fn get_api_token_header(headers: &HeaderMap) -> Result<Uuid, anyhow::Error> 
     ))?;
 
     Ok(api_token)
+}
+
+#[tracing::instrument(name = "health check handler")]
+pub async fn health_check() -> HttpResponse {
+    HttpResponse::Ok().finish()
 }
